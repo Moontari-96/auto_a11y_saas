@@ -1,0 +1,27 @@
+{
+    "name": "worker",
+    "version": "1.0.0",
+    "main": "index.js",
+    "scripts": {
+        "dev": "ts-node index.ts",
+        "build": "tsc",
+        "start": "node dist/index.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "description": "",
+    "dependencies": {
+        "axe-core": "^4.11.0",
+        "chrome-launcher": "^1.2.1",
+        "express": "^5.2.1",
+        "lighthouse": "^12.8.2",
+        "puppeteer": "^24.33.0"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.6",
+        "@types/node": "^25.0.3",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.9.3"
+    }
+}
