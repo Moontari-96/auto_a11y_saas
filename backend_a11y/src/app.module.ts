@@ -43,7 +43,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // 개발 중에만 true
+        synchronize: true, // 개발 중에만 true DB 변경사항 바로 반영
         logging: true, // SQL 쿼리가 터미널에 찍혀서 디버깅에 좋음
       }),
     }),

@@ -4,12 +4,13 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany, // 추가
 } from 'typeorm';
-
-@Entity('organizations') // 실제 DB 테이블 이름
+import { Project } from '@/projects/entities/projects.entity';
+@Entity('organizations')
 export class Organization {
-  @PrimaryGeneratedColumn('uuid') // 'uuid'라고 명시해줘야 함!
-  org_id: string; // 타입은 string으로!
+  @PrimaryGeneratedColumn('uuid')
+  org_id: string;
 
   @Column()
   org_name: string;
@@ -17,11 +18,15 @@ export class Organization {
   @Column()
   business_number: string;
 
-  @Column({ nullable: true }) // URL은 없을 수도 있으니까 nullable 처리
-  base_url: string; //
+  @Column({ nullable: true })
+  base_url: string;
 
   @Column({ default: 'N' })
   delete_yn: string;
+
+  // 1:N 관계 설정 추가: 한 고객사는 여러 프로젝트를 가질 수 있음
+  @OneToMany(() => Project, (project) => project.organization)
+  projects: Project[];
 
   @CreateDateColumn()
   created_at: Date;

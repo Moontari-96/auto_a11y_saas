@@ -9,5 +9,6 @@ import { Organization } from './entities/organization.entity'; // 엔티티 경�
   imports: [TypeOrmModule.forFeature([Organization])],
   controllers: [OrganizationsController],
   providers: [OrganizationsService],
+  exports: [OrganizationsService],
 })
 export class OrganizationsModule {}

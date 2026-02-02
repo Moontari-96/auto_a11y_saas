@@ -20,6 +20,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('scans') // 컨트롤러 태그
     .addTag('Organization') // 컨트롤러 태그
+    .addTag('Project') // 컨트롤러 태그
     .addBearerAuth() // JWT 인증이 필요할 경우 추가
     .build();
 
