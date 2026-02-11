@@ -70,15 +70,17 @@ export class ProjectsController {
     summary: '프로젝트 수정',
     description: '프로젝트 목록을 수정합니다',
   })
-  @Patch('updateProj')
-  async updateProj(@Body() saveDto: SaveProjectDto) {
+  @Patch('upsertProj')
+  async upsertProj(@Body() saveDto: SaveProjectDto) {
     try {
-      console.log('접근확인', saveDto);
       const result = await this.projectsService.upsertProjects(saveDto);
+      // 서비스에서 신규 생성인지 수정인지 flag를 넘겨주면 더 세밀한 메시지 처리가 가능합니다.
+      const isNew = result?.action === 'created';
+
       return {
         success: true,
         data: result,
-        message: '프로젝트 수정을 성공했습니다.',
+        message: `프로젝트 ${isNew ? '등록' : '수정'}에 성공했습니다.`,
       };
     } catch (error) {
       return {

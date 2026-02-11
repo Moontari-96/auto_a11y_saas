@@ -26,12 +26,10 @@ export class ProjectsService {
     try {
       const { page = 1, limit = 5, keyword } = queryDto;
       const skip = (page - 1) * limit;
-      console.log(123, '확인');
 
       const queryBuilder = this.projectRepository
         .createQueryBuilder('proj')
-        .leftJoinAndSelect('proj.organization', 'org') // 고객사 정보를 같이 가져오도록 추가;
-        .where('proj.delete_yn = :deleteYn', { deleteYn: 'N' });
+        .leftJoinAndSelect('proj.organization', 'org'); // 고객사 정보를 같이 가져오도록 추가;
 
       // org_id 기준 유니크한 프로젝트만 가져오고 싶을 때
       queryBuilder.distinctOn(['proj.org_id']);
@@ -78,7 +76,7 @@ export class ProjectsService {
       const proj = await this.projectRepository.find({
         where: {
           org_id: orgId,
-          delete_yn: 'N',
+          // delete_yn: 'N',
         },
         relations: ['organization'],
         order: { created_at: 'DESC' }, // 최신순 정렬
@@ -114,13 +112,15 @@ export class ProjectsService {
           // 1. 고객사의 base_url 업데이트
           // 직접 manager를 사용하여 Organization 테이블 수정
           await manager.update(Organization, { org_id }, { base_url });
-          console.log(org_id, '확인');
           // 2. 프로젝트 리스트 Upsert
+          let hasCreated = false; // 신규 생성 여부 체크용 플래그
+          console.log('접근확인용');
           const results: Project[] = [];
           for (const item of items) {
             // 핵심: 신규 항목이면 project_id 필드 자체를 제거합니다.
             if (!item.project_id) {
               delete item.project_id;
+              hasCreated = true;
             }
 
             const projectData = {
@@ -129,8 +129,6 @@ export class ProjectsService {
               organization: { org_id: org_id }, //  관계 객체 형태로 전달,
             };
 
-            console.log('DB에 저장될 개별 데이터:', projectData); // 디버깅용 로그
-
             // 이제 project_id가 없는 데이터는 정상적으로 INSERT 됩니다.
             const saved = await manager.save(Project, projectData);
             results.push(saved);
@@ -138,8 +136,10 @@ export class ProjectsService {
 
           return {
             success: true,
-            count: results.length,
-            message: '성공적으로 저장되었습니다.',
+            action: hasCreated ? 'created' : 'updated',
+            message: hasCreated
+              ? '성공적으로 등록되었습니다.'
+              : '성공적으로 수정되었습니다.',
           };
         },
       ); // 💡 트랜잭션 종료 괄호 확인

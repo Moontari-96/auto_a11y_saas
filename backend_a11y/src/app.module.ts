@@ -12,6 +12,7 @@ import { AuthModule } from './auth/auth.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CrawlModule } from './crawl/crawl.module';
 
 @Module({
   imports: [
@@ -47,6 +48,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         logging: true, // SQL 쿼리가 터미널에 찍혀서 디버깅에 좋음
       }),
     }),
+
+    CrawlModule,
   ],
   controllers: [AppController],
   providers: [AppService],
