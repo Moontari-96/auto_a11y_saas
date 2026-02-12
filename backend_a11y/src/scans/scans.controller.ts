@@ -9,8 +9,8 @@ import {
 import { ScansService } from './scans.service';
 import { Public } from '@/auth/public.decorator';
 import { ApiConsumes, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-@ApiTags('award')
 @Public()
+@ApiTags('Scans')
 @Controller('scans')
 export class ScansController {
   constructor(private readonly scansService: ScansService) {}

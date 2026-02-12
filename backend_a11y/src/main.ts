@@ -5,6 +5,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // 글로벌 프리픽스 설정
+  app.setGlobalPrefix('a11y');
+
   app.enableCors({
     origin: 'http://localhost:3000',
     credentials: true,
@@ -16,6 +19,8 @@ async function bootstrap() {
     .setDescription('AI 기반 웹 접근성 솔루션 API 문서')
     .setVersion('1.0')
     .addTag('scans') // 컨트롤러 태그
+    .addTag('Organization') // 컨트롤러 태그
+    .addTag('Project') // 컨트롤러 태그
     .addBearerAuth() // JWT 인증이 필요할 경우 추가
     .build();
 
