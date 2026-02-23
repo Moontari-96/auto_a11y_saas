@@ -194,4 +194,26 @@ export class OrganizationsService {
       );
     }
   }
+
+  /**
+   * 검사용 고객사 조회
+   */
+  async scanSelectAll() {
+    try {
+      const queryBuilder = this.organizationRepository
+        .createQueryBuilder('org')
+        // 삭제되지 않은 상태 조건 추가
+        .andWhere('org.delete_yn = :deleteYn', { deleteYn: 'N' });
+      const availableOrgs = await queryBuilder.getMany();
+      return {
+        success: true,
+        data: availableOrgs,
+      };
+    } catch (error) {
+      console.error('미등록 고객사 조회 중 에러:', error);
+      throw new InternalServerErrorException(
+        '고객사 목록을 불러오는 중 오류가 발생했습니다.',
+      );
+    }
+  }
 }

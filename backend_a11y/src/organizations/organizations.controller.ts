@@ -207,4 +207,30 @@ export class OrganizationsController {
       };
     }
   }
+  @ApiOperation({
+    summary: '스캔용 고객사 목록 셀렉트',
+    description: '스캔용 고객사 목록 조회',
+  })
+  @Post('scanSelectAll')
+  @HttpCode(200) // POST지만 조회이므로 200 OK를 반환하도록 설정
+  async scanSelectAll(@Body() body: any) {
+    // Body가 들어온다면 반드시 선언!
+    try {
+      const result = await this.organizationsService.scanSelectAll();
+
+      // result가 정상적인 객체인지 확인 후 전개
+      return {
+        success: true,
+        message: '스캔용 고객사 목록 셀렉트를 성공적으로 불러왔습니다.',
+        data: result.data || result, // 구조에 따라 안전하게 처리
+      };
+    } catch (error) {
+      console.error('컨트롤러 진입 후 에러:', error); // 진짜 에러 원인 파악용
+      return {
+        success: false,
+        message: '목록 조회 중 오류가 발생했습니다.',
+        error: error.message,
+      };
+    }
+  }
 }
