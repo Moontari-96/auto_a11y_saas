@@ -1,16 +1,18 @@
-# 1. 노드 환경 설정
-FROM node:20-alpine
-
-# 2. 작업 디렉토리 생성
+# --- 빌드 단계 ---
+FROM node:20-alpine AS builder
 WORKDIR /usr/src/app
-
-# 3. 의존성 설치 (캐시 활용을 위해 분리)
 COPY package*.json ./
 RUN npm install
-
-# 4. 소스 코드 복사 및 빌드
 COPY . .
 RUN npm run build
 
-# 5. 실행
+# --- 실행 단계 ---
+FROM node:20-alpine
+WORKDIR /usr/src/app
+# 빌드 단계에서 생성된 결과물만 복사 (이미지 용량 다이어트)
+COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY --from=builder /usr/src/app/package*.json ./
+
+EXPOSE 3001
 CMD ["npm", "run", "start:prod"]
