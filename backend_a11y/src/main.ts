@@ -9,7 +9,10 @@ async function bootstrap() {
   app.setGlobalPrefix('a11y');
 
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: [
+      'http://localhost:3000', // 로컬 개발용
+      'https://auto-a11y-saas.vercel.app', // 현재 EC2 IP (프론트엔드 포트가 3000인 경우)
+    ],
     credentials: true,
   });
 
