@@ -13,4 +13,4 @@ COPY . .
 RUN npm run build
 
 # 5. 실행
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "run", "start"]
