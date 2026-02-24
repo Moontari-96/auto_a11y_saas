@@ -1,6 +1,7 @@
 version: '3.8'
+
 services:
-    # 1. DB 서비스 추가 (새로 들어가는 내용)
+    # 1. 데이터베이스 추가
     db:
         image: postgres:15-alpine
         restart: always
@@ -11,24 +12,24 @@ services:
         ports:
             - '5432:5432'
         volumes:
-            - ./postgres_data:/var/lib/postgresql/data # 데이터 저장용
+            - ./postgres_data:/var/lib/postgresql/data
 
-    # 2. 백엔드 설정 수정
+    # 2. 백엔드
     backend:
         build: ./backend_a11y
-        depends_on:
-            - db # DB가 뜰 때까지 기다림
-        env_file:
-            - .env
         ports:
             - '3001:3001'
-
-    # 3. 워커 설정
-    worker:
-        build: ./worker
+        env_file: .env
+        restart: always
         depends_on:
             - db
-        env_file:
-            - .env
+
+    # 3. 워커
+    worker:
+        build: ./worker
         ports:
             - '4000:4000'
+        env_file: .env
+        restart: always
+        depends_on:
+            - db
