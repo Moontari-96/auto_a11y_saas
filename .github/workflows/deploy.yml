@@ -3,7 +3,7 @@ name: Deploy to EC2
 on:
     push:
         branches:
-            - main # 메인 브랜치에 푸시될 때만 작동
+            - main
 
 jobs:
     deploy:
@@ -15,20 +15,13 @@ jobs:
             - name: Deploy to EC2 via SSH
               uses: appleboy/ssh-action@master
               with:
-              host: ${{ secrets.HOST }}
-              username: ${{ secrets.USERNAME }}
-              key: ${{ secrets.KEY }}
-              script: |
-                  # 1. 실제 서버의 폴더 경로로 이동 (수정됨)
-                  cd ~/apps/auto_a11y_saas
-
-                  # 2. 로컬 변경사항 무시하고 강제로 최신 코드 가져오기
-                  git fetch --all
-                  git reset --hard origin/main
-
-                  # 3. 새 설정으로 다시 빌드 (db 포함)
-                  docker-compose down
-                  docker-compose up -d --build
-
-                  # 4. 안 쓰는 이미지 정리
-                  docker image prune -f
+                  host: ${{ secrets.HOST }}
+                  username: ${{ secrets.USERNAME }}
+                  key: ${{ secrets.KEY }}
+                  script: |
+                      cd ~/apps/auto_a11y_saas
+                      git fetch --all
+                      git reset --hard origin/main
+                      docker-compose down
+                      docker-compose up -d --build
+                      docker image prune -f
