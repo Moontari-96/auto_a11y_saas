@@ -1,15 +1,34 @@
 version: '3.8'
 services:
+    # 1. DB 서비스 추가 (새로 들어가는 내용)
+    db:
+        image: postgres:15-alpine
+        restart: always
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: moon
+            POSTGRES_DB: postgres
+        ports:
+            - '5432:5432'
+        volumes:
+            - ./postgres_data:/var/lib/postgresql/data # 데이터 저장용
+
+    # 2. 백엔드 설정 수정
     backend:
         build: ./backend_a11y
+        depends_on:
+            - db # DB가 뜰 때까지 기다림
+        env_file:
+            - .env
         ports:
             - '3001:3001'
-        env_file: .env # 루트에 있는 .env 사용
-        restart: always
 
+    # 3. 워커 설정
     worker:
         build: ./worker
+        depends_on:
+            - db
+        env_file:
+            - .env
         ports:
             - '4000:4000'
-        env_file: .env # 같은 .env를 공유하거나 따로 지정 가능
-        restart: always
