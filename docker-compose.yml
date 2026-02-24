@@ -4,7 +4,7 @@ services:
         build: ./backend_a11y
         ports:
             - '3001:3001'
-        env_file: .env # 루트에 있는 .env 사용
+        env_file: ./backend_a11y/.env # 루트에 있는 .env 사용
         restart: always
 
     worker:
