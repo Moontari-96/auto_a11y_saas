@@ -17,7 +17,7 @@ export default function DashboardPage() {
 
                 <div className="border p-4 rounded">
                     <p className="text-sm text-gray-500">오류</p>
-                    <p className="text-2xl font-bold text-red-500">27</p>
+                    <p className="text-2xl font-bold text-red-500">0</p>
                 </div>
             </div>
         </>
