@@ -29,7 +29,7 @@ export class A11yIssue {
   description: string; // 결함에 대한 설명
 
   @Column({ type: 'jsonb', nullable: true })
-  raw_detail: any; // 워커에서 보내온 상세 원본 데이터 (JSON)
+  raw_detail: unknown; // 워커에서 보내온 상세 원본 데이터 (JSON)
 
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;

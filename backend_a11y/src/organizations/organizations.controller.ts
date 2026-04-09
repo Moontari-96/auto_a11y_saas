@@ -1,19 +1,8 @@
-import { Organization } from './entities/organization.entity';
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  HttpCode,
-} from '@nestjs/common';
+import { Controller, Post, Body, Patch, Param, HttpCode } from '@nestjs/common';
 import { OrganizationsService } from './organizations.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
-import { ApiConsumes, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public } from '@/auth/public.decorator';
 import { GetOrganizationsQueryDto } from './dto/get-organizations-query.dto';
 
@@ -47,12 +36,16 @@ export class OrganizationsController {
         message: '고객사 목록을 성공적으로 불러왔습니다.',
         ...result, // 서비스가 리턴한 data, meta가 여기에 풀림
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       // 에러 발생 시 규격
       return {
         success: false,
         message: '목록 조회 중 오류가 발생했습니다.',
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -78,12 +71,16 @@ export class OrganizationsController {
         message: '고객사 정보를 성공적으로 불러왔습니다.',
         data: data,
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       // 에러 발생 시 규격
       return {
         success: false,
         message: '목록 조회 중 오류가 발생했습니다.',
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -108,12 +105,16 @@ export class OrganizationsController {
         message: '고객사 정보를 등록완료했습니다',
         data: data,
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       // 에러 발생 시 규격
       return {
         success: false,
         message: '고객사 등록 중 오류가 발생했습니다.',
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -141,12 +142,16 @@ export class OrganizationsController {
         message: '고객사 정보 수정을 완료했습니다.',
         data: data,
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       // 에러 발생 시 규격
       return {
         success: false,
         message: '고객사 수정 중 오류가 발생했습니다.',
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -171,12 +176,16 @@ export class OrganizationsController {
         message: '고객사 정보를 삭제했습니다',
         data: data,
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       // 에러 발생 시 규격
       return {
         success: false,
         message: '고객사 삭제 중 오류가 발생했습니다.',
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -187,7 +196,7 @@ export class OrganizationsController {
   })
   @Post('selectAll')
   @HttpCode(200) // POST지만 조회이므로 200 OK를 반환하도록 설정
-  async selectAll(@Body() body: any) {
+  async selectAll() {
     // Body가 들어온다면 반드시 선언!
     try {
       const result = await this.organizationsService.selectAll();
@@ -198,12 +207,16 @@ export class OrganizationsController {
         message: '고객사 목록 셀렉트를 성공적으로 불러왔습니다.',
         data: result.data || result, // 구조에 따라 안전하게 처리
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       console.error('컨트롤러 진입 후 에러:', error); // 진짜 에러 원인 파악용
       return {
         success: false,
         message: '목록 조회 중 오류가 발생했습니다.',
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -213,7 +226,7 @@ export class OrganizationsController {
   })
   @Post('scanSelectAll')
   @HttpCode(200) // POST지만 조회이므로 200 OK를 반환하도록 설정
-  async scanSelectAll(@Body() body: any) {
+  async scanSelectAll() {
     // Body가 들어온다면 반드시 선언!
     try {
       const result = await this.organizationsService.scanSelectAll();
@@ -224,12 +237,16 @@ export class OrganizationsController {
         message: '스캔용 고객사 목록 셀렉트를 성공적으로 불러왔습니다.',
         data: result.data || result, // 구조에 따라 안전하게 처리
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       console.error('컨트롤러 진입 후 에러:', error); // 진짜 에러 원인 파악용
       return {
         success: false,
         message: '목록 조회 중 오류가 발생했습니다.',
-        error: error.message,
+        error: errorMessage,
       };
     }
   }

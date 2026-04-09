@@ -4,15 +4,9 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
-  OneToMany,
-  JoinColumn,
   Check,
 } from 'typeorm';
 import { ScanStatus } from './scan-status.enum';
-import { Project } from '@/projects/entities/projects.entity'; // 실제 경로에 맞게 수정
-import { A11yIssue } from './a11y-issue.entity'; // 실제 경로에 맞게 수정
 
 @Entity('scan_sessions', { schema: 'public' })
 @Check(`"overall_score" >= 0 AND "overall_score" <= 100`)

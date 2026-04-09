@@ -13,7 +13,7 @@ async function bootstrap() {
       'http://localhost:3000', // 로컬 개발용
       'https://auto-a11y-saas.vercel.app', // 현재 EC2 IP (프론트엔드 포트가 3000인 경우)
       'https://auto-a11y-saas.vercel.app/', // 끝에 슬래시 포함 버전
-      'http://ableflow.duckdns.org' // 본인 API 도메인도 추가해두면 좋습니다.
+      'http://ableflow.duckdns.org', // 본인 API 도메인도 추가해두면 좋습니다.
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // OPTIONS 명시
     credentials: true,
@@ -35,4 +35,7 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3001, '0.0.0.0');
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Error starting application:', err);
+  process.exit(1);
+});

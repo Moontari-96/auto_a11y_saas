@@ -30,11 +30,15 @@ export class ProjectsController {
         ...result,
         message: '목록 조회를 성공했습니다.',
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       return {
         success: false,
         message: '목록 조회 중 오류가 발생했습니다.',
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -57,11 +61,15 @@ export class ProjectsController {
         data: result,
         message: '프로젝트 상세 조회를 성공했습니다.',
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       return {
         success: false,
         message: '프로젝트 상세 조회 중 오류가 발생했습니다.',
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -82,11 +90,15 @@ export class ProjectsController {
         data: result,
         message: `프로젝트 ${isNew ? '등록' : '수정'}에 성공했습니다.`,
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       return {
         success: false,
         message: '프로젝트 상세 조회 중 오류가 발생했습니다.',
-        error: error.message,
+        error: errorMessage,
       };
     }
   }

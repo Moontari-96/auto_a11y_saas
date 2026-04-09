@@ -1,21 +1,20 @@
-import { Crawl } from './entities/crawl.entity';
 import {
   Controller,
-  Get,
   Post,
   Body,
-  Patch,
-  Param,
-  Delete,
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { CrawlService } from './crawl.service';
-import { CreateCrawlDto } from './dto/create-crawl.dto';
-import { UpdateCrawlDto } from './dto/update-crawl.dto';
 import axios from 'axios';
-import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '@/auth/public.decorator';
+
+interface WorkerResponse {
+  success: boolean;
+  data: Array<{ url: string; title: string }>;
+}
+
 @Public()
 @ApiTags('Crawl')
 @Controller('crawl')
@@ -49,33 +48,44 @@ export class CrawlController {
       // 2. Worker 서버(Node.js)로 요청 전달
       // 환경변수에 WORKER_URL="http://localhost:4000" 설정 필요
       console.log(`${process.env.WORKER_URL}/crawl`, 'url 확인');
-      const response = await axios.post(`${process.env.WORKER_URL}/crawl`, {
-        url: body.url,
-      });
+      const response = await axios.post<WorkerResponse>(
+        `${process.env.WORKER_URL}/crawl`,
+        {
+          url: body.url,
+        },
+      );
       console.log('Worker Response:', response.data);
       const res = response.data;
       return {
         success: res.success,
         data: res.data, // [{url, title}, ...]
       };
-    } catch (error) {
-      // 에러의 정체를 밝히는 로그
-      if (error.response) {
-        // 서버가 응답을 보냈지만 4xx, 5xx 에러인 경우
-        console.error(
-          'Worker Response Error:',
-          error.response.status,
-          error.response.data,
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        // 에러의 정체를 밝히는 로그
+        if (error.response) {
+          // 서버가 응답을 보냈지만 4xx, 5xx 에러인 경우
+          console.error(
+            'Worker Response Error:',
+            error.response.status,
+            error.response.data,
+          );
+        } else if (error.request) {
+          // 요청은 보냈으나 응답을 전혀 못 받은 경우 (포트 막힘 등)
+          console.error('Worker No Response:', error.request);
+        } else {
+          console.error('Axios Setup Error:', error.message);
+        }
+        throw new InternalServerErrorException(
+          `워커 서버 통신 오류: ${error.message}`,
         );
-      } else if (error.request) {
-        // 요청은 보냈으나 응답을 전혀 못 받은 경우 (포트 막힘 등)
-        console.error('Worker No Response:', error.request);
+      } else if (error instanceof Error) {
+        throw new InternalServerErrorException(
+          `알 수 없는 오류 발생: ${error.message}`,
+        );
       } else {
-        console.error('Axios Setup Error:', error.message);
+        throw new InternalServerErrorException('알 수 없는 오류 발생');
       }
-      throw new InternalServerErrorException(
-        `워커 서버 통신 오류: ${error.message}`,
-      );
     }
   }
 }
