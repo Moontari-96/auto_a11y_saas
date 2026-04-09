@@ -13,7 +13,9 @@ async function bootstrap() {
       'http://localhost:3000', // 로컬 개발용
       'https://auto-a11y-saas.vercel.app', // 현재 EC2 IP (프론트엔드 포트가 3000인 경우)
       'https://auto-a11y-saas.vercel.app/', // 끝에 슬래시 포함 버전
+      'http://ableflow.duckdns.org' // 본인 API 도메인도 추가해두면 좋습니다.
     ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // OPTIONS 명시
     credentials: true,
   });
 
@@ -31,6 +33,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document); // 첫 번째 인자 'api'가 접속 경로
 
-  await app.listen(process.env.PORT ?? 3001);
+  await app.listen(process.env.PORT ?? 3001, '0.0.0.0');
 }
 bootstrap();
