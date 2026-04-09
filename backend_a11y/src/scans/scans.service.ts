@@ -66,11 +66,11 @@ export class ScansService {
             severity: issue.severity,
             element_selector: issue.selector,
             description: issue.description,
-            raw_detail: issue,
+            raw_detail: issue as any,
           }),
         );
 
-        await this.issueRepository.insert(issuesToSave);
+        await this.issueRepository.save(issuesToSave);
 
         const score = Math.max(0, 100 - results.length * 5);
         await this.scanRepository.update(scanId, {

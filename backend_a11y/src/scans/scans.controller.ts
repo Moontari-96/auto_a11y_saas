@@ -28,7 +28,6 @@ export class ScansController {
         const scanId = await this.scansService.requestScanToWorker(
           target.url,
           target.projectId,
-          orgId,
         );
 
         scanResults.push({
