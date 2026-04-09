@@ -14,7 +14,15 @@ const chrome_launcher_1 = __importDefault(require("chrome-launcher"));
 async function runLighthouse(url) {
     // Chrome 실행
     const chrome = await chrome_launcher_1.default.launch({
-        chromeFlags: ['--headless'],
+        chromeFlags: [
+            '--headless',
+            '--no-sandbox', // 필수
+            '--disable-setuid-sandbox', // 필수
+            '--disable-gpu',
+            '--disable-dev-shm-usage' // 컨테이너 메모리 부족 방지
+        ],
+        // 만약 환경변수가 안 먹힐 경우를 대비해 직접 경로 지정 가능
+        // chromePath: '/usr/bin/chromium-browser'
     });
     // 접근성 카테고리만 검사
     const result = await (0, lighthouse_1.default)(url, {
