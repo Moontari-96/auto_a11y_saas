@@ -7,11 +7,10 @@
 
         // Environment Settings
         // See also https://aka.ms/tsconfig/module
-        "ignoreDeprecations": "6.0", // 또는 "6.0"
-        "module": "CommonJS",
-        "target": "ES2020",
+        "module": "NodeNext",
+        "target": "ES2022",
         "types": [],
-        "moduleResolution": "node",
+        "moduleResolution": "NodeNext",
         // For nodejs:
         // "lib": ["esnext"],
         // "types": ["node"],
