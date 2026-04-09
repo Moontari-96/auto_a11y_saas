@@ -130,7 +130,7 @@ export default function ProjectManagePage() {
         setCrawling(true)
         try {
             const res = await api.post('/crawl/getCrawling', {
-                url: formData.target_url,
+                url: formData.base_url,
             })
             const newPages = res.data.data // [{ url, title }]
 
