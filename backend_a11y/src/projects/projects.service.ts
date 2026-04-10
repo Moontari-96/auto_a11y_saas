@@ -76,7 +76,8 @@ export class ProjectsService {
       const proj = await this.projectRepository.find({
         where: {
           org_id: orgId,
-          // delete_yn: 'N',
+          delete_yn: 'N',
+          display_yn: 'Y',
         },
         relations: ['organization'],
         order: { created_at: 'DESC' }, // 최신순 정렬
@@ -106,7 +107,7 @@ export class ProjectsService {
     try {
       const { org_id, base_url, project_title, items } = dto;
 
-      // 💡 manager.transaction을 통해 하나의 트랜잭션으로 관리
+      // manager.transaction을 통해 하나의 트랜잭션으로 관리
       return await this.projectRepository.manager.transaction(
         async (manager) => {
           // 1. 고객사의 base_url 업데이트
