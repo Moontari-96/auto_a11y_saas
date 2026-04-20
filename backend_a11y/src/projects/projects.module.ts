@@ -4,10 +4,11 @@ import { ProjectsController } from './projects.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Project } from './entities/projects.entity';
 import { OrganizationsModule } from '@/organizations/organizations.module';
+import { ScanSession } from '@/scans/entities/scan-session.entity';
 @Module({
   imports: [
     // 3. 이 모듈에서 Project 엔티티를 Repository로 사용하겠다고 등록!
-    TypeOrmModule.forFeature([Project]),
+    TypeOrmModule.forFeature([Project, ScanSession]),
     OrganizationsModule,
   ],
   controllers: [ProjectsController],

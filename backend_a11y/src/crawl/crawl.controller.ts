@@ -47,7 +47,6 @@ export class CrawlController {
     try {
       // 2. Worker 서버(Node.js)로 요청 전달
       // 환경변수에 WORKER_URL="http://localhost:4000" 설정 필요
-      console.log(`${process.env.WORKER_URL}/crawl`, 'url 확인');
       const response = await axios.post<WorkerResponse>(
         `${process.env.WORKER_URL}/crawl`,
         {

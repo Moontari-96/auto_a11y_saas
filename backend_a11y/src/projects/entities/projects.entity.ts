@@ -4,11 +4,13 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 // 1. 대문자 Organization으로 가져와야 합니다.
 import { Organization } from '@/organizations/entities/organization.entity';
+import { ScanSession } from '@/scans/entities/scan-session.entity';
 
 @Entity('projects')
 export class Project {
@@ -22,10 +24,6 @@ export class Project {
   })
   @JoinColumn({ name: 'org_id' })
   organization: Organization;
-
-  // 충돌을 방지하세요
-  @Column({ name: 'org_id' })
-  org_id: string;
 
   @Column({
     comment: '고객사 내부의 큰 프로젝트 단위 제목',
@@ -50,4 +48,7 @@ export class Project {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @OneToMany(() => ScanSession, (scanSession) => scanSession.project)
+  scanSessions: ScanSession[];
 }

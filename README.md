@@ -206,5 +206,3 @@ B2B 고객이 **검사 환경을 사전에 준비**하도록 유도하여
 > 자동 접근성 검사는 기술 문제가 아니라
 >
 > **환경·정책·책임 범위를 명확히 하는 서비스 설계의 문제**다.
-
-![Gemini_Generated_Image_wp8mx7wp8mx7wp8m.png](attachment:ea7e3f17-3fc3-4394-96e6-8180edded017:Gemini_Generated_Image_wp8mx7wp8mx7wp8m.png)

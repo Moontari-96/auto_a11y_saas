@@ -75,6 +75,37 @@ export class ProjectsController {
   }
 
   @ApiOperation({
+    summary: '프로젝트 스캔 상세 조회',
+    description: '조회 조건에 맞는 프로젝트 목록을 조회합니다',
+  })
+  @ApiQuery({
+    name: 'orgId',
+    required: true,
+    description: '고객사 UUID',
+  })
+  @Post('findScanAllByOrg/:orgId')
+  async findScanAllByOrg(@Param('orgId') orgId: string) {
+    try {
+      const result = await this.projectsService.findScanByOrg(orgId);
+      return {
+        success: true,
+        data: result,
+        message: '프로젝트 상세 조회를 성공했습니다.',
+      };
+    } catch (error: unknown) {
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      return {
+        success: false,
+        message: '프로젝트 상세 조회 중 오류가 발생했습니다.',
+        error: errorMessage,
+      };
+    }
+  }
+
+  @ApiOperation({
     summary: '프로젝트 수정',
     description: '프로젝트 목록을 수정합니다',
   })

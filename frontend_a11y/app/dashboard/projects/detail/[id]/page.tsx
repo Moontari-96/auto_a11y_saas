@@ -34,19 +34,37 @@ import Link from 'next/link'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
 
+// 1. 타입 정의 정립
+interface Organization {
+    org_id: string;
+    org_name: string;
+    base_url: string;
+}
+
+interface ProjectItem {
+    project_id?: string;
+    temp_id?: string;
+    org_id?: string;
+    project_name: string;
+    target_url: string;
+    display_yn: string;
+    delete_yn: string;
+    organization?: Organization;
+}
+
 export default function ProjectManagePage() {
     const params = useParams()
     const router = useRouter()
+
     // URL 파라미터가 'new'가 아니면 수정 모드로 판단
     const isEditMode = params.id !== 'new'
     const orgIdFromParam = isEditMode ? (params.id as string) : null
 
+    // 상태 관리
     const [loading, setLoading] = useState(false)
     const [crawling, setCrawling] = useState(false)
-    const [organizations, setOrganizations] = useState<any[]>([])
-
-    // 하단 목록 데이터 (DB에서 온 데이터 + 크롤링으로 추가된 데이터)
-    const [projectItems, setProjectItems] = useState<any[]>([])
+    const [organizations, setOrganizations] = useState<Organization[]>([])
+    const [projectItems, setProjectItems] = useState<ProjectItem[]>([])
 
     const [formData, setFormData] = useState({
         project_title: '',
@@ -54,10 +72,8 @@ export default function ProjectManagePage() {
         org_id: '',
         base_url: '',
         target_url: '',
-        selected_urls: [] as string[], // 체크된 URL들 관리
+        selected_urls: [] as string[],
     })
-    // 크롤링된 전체 페이지 리스트
-    const [crawledPages, setCrawledPages] = useState<any[]>([])
 
     // 1. 초기 데이터 로드
     useEffect(() => {
@@ -65,13 +81,13 @@ export default function ProjectManagePage() {
             try {
                 setLoading(true)
                 const orgRes = await api.post('/organizations/selectAll')
-                let currentOrgs = orgRes.data.data || []
+                let currentOrgs: Organization[] = orgRes.data.data || []
 
                 if (isEditMode && orgIdFromParam) {
                     const res = await api.post(
                         `/projects/findAllByOrg/${orgIdFromParam}`
                     )
-                    const data = res.data.data
+                    const data: ProjectItem[] = res.data.data
 
                     if (data && data.length > 0) {
                         const first = data[0]
@@ -79,24 +95,22 @@ export default function ProjectManagePage() {
                         // 조인해서 가져온 고객사가 기존 목록에 없는 경우에만 추가
                         if (
                             first.organization &&
-                            !currentOrgs.find(
-                                (o: any) => o.org_id === first.org_id
-                            )
+                            !currentOrgs.find(o => o.org_id === first.org_id) // any 제거
                         ) {
                             currentOrgs = [...currentOrgs, first.organization]
                         }
 
-                        setOrganizations(currentOrgs) // 중복 체크가 완료된 리스트 세팅
+                        setOrganizations(currentOrgs)
 
                         setFormData({
-                            project_title: first.project_title || '',
+                            project_title: first.project_name || '', // DB 구조에 맞게 매핑 주의
                             project_name: first.project_name || '',
-                            org_id: first.org_id || '',
+                            org_id: first.organization?.org_id || '',
                             target_url: first.target_url || '',
                             base_url: first.organization?.base_url || '',
                             selected_urls: data
-                                .filter((item: any) => item.delete_yn === 'N')
-                                .map((item: any) => item.target_url),
+                                .filter(item => item.delete_yn === 'N')
+                                .map(item => item.target_url),
                         })
                         setProjectItems(data)
                     } else {
@@ -107,6 +121,7 @@ export default function ProjectManagePage() {
                 }
             } catch (e) {
                 console.error('초기화 에러:', e)
+                toast.error('데이터를 불러오는 중 오류가 발생했습니다.')
             } finally {
                 setLoading(false)
             }
@@ -116,37 +131,39 @@ export default function ProjectManagePage() {
 
     // 2. 고객사 변경 시 target_url 자동 세팅
     const handleOrgChange = (id: string) => {
-        const org = organizations.find((o: any) => o.org_id === id)
-        setFormData({
-            ...formData,
+        const org = organizations.find(o => o.org_id === id) // any 제거
+        setFormData(prev => ({
+            ...prev,
             org_id: id,
             base_url: org?.base_url || '',
-        })
+        }))
     }
 
     // 3. 크롤링 핸들러 (신규 추가 로직)
     const handleStartCrawling = async () => {
-        if (!formData.base_url) return alert('URL을 입력해주세요.')
+        if (!formData.base_url) {
+            return toast.warning('URL을 입력해주세요.') // alert 대신 toast 사용
+        }
+
         setCrawling(true)
         try {
             const res = await api.post('/crawl/getCrawling', {
                 url: formData.base_url,
             })
-            const newPages = res.data.data // [{ url, title }]
+            // 크롤링 응답 데이터 타입 정의
+            const newPages: { title: string; url: string }[] = res.data.data
 
-            // 기존 목록에 새로운 크롤링 결과 합치기 (중복 제거)
             const combined = [...projectItems]
-            const newUrls: string[] = [...formData.selected_urls]
+            const newUrls = [...formData.selected_urls]
 
-            newPages.forEach((page: any) => {
-                if (
-                    !combined.find(
-                        item => (item.target_url || item.url) === page.url
-                    )
-                ) {
+            newPages.forEach(page => {
+                // 중복 체크
+                if (!combined.find(item => (item.target_url || item.target_url) === page.url)) {
                     combined.push({
+                        temp_id: `crawl-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
                         project_name: page.title,
                         target_url: page.url,
+                        display_yn: 'Y',
                         delete_yn: 'N',
                     })
                     newUrls.push(page.url)
@@ -154,24 +171,23 @@ export default function ProjectManagePage() {
             })
 
             setProjectItems(combined)
-            setFormData({ ...formData, selected_urls: newUrls })
+            setFormData(prev => ({ ...prev, selected_urls: newUrls }))
+            toast.success(`${newPages.length}개의 페이지를 크롤링했습니다.`)
         } catch (e) {
-            alert('크롤링 실패')
+            console.error('크롤링 에러:', e)
+            toast.error('크롤링에 실패했습니다. URL을 확인해주세요.')
         } finally {
             setCrawling(false)
         }
     }
 
-    // 5. 저장 핸들러
+    // 4. 저장 핸들러
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        // 1. 유효성 검사 (Guard Clause)
-        // 수정 모드든 생성 모드든 아이템이 하나도 없으면 진행할 필요가 없습니다.
         if (projectItems.length === 0) {
             toast.error('항목 누락', {
-                description:
-                    '크롤링 추가 버튼 혹은 수동으로 항목을 추가해주세요.',
+                description: '크롤링 추가 버튼 혹은 수동으로 항목을 추가해주세요.',
             })
             return
         }
@@ -186,39 +202,30 @@ export default function ProjectManagePage() {
                 items: projectItems.map(item => ({
                     project_id: item.project_id || null,
                     project_name: item.project_name,
-                    target_url: item.target_url || item.url,
+                    target_url: item.target_url,
                     display_yn: item.display_yn || 'Y',
                     delete_yn: item.delete_yn || 'N',
                 })),
             }
 
-            console.log('최종 전송 데이터:', payload)
-
-            // 2. 통합된 API 호출
-            // 서버에서 이미 action(created/updated)과 message를 보내주므로 그대로 활용합니다.
             const response = await api.patch('/projects/upsertProj', payload)
 
             if (response.data.success) {
-                // 서버가 주는 친절한 메시지("성공적으로 등록/수정되었습니다")를 Toast로 띄웁니다.
-                // 서버의 action에 따라 다른 스타일 적용 가능
                 toast.success(response.data.message)
                 router.push('/dashboard/projects')
             } else {
-                toast.error('저장 실패', {
-                    description: response.data.message,
-                })
+                toast.error('저장 실패', { description: response.data.message })
             }
         } catch (e) {
-            toast.error('저장 실패', {
-                description: '서버 에러가 발생했습니다.',
-            })
+            console.error('저장 에러:', e)
+            toast.error('저장 실패', { description: '서버 에러가 발생했습니다.' })
         } finally {
             setLoading(false)
         }
     }
 
-    // 항목 수정 핸들러 (이름, URL, 노출 여부 등)
-    const updateItemField = (id: string, field: string, value: any) => {
+    // 5. 항목 수정 핸들러 (타입 안정성 강화)
+    const updateItemField = (id: string, field: keyof ProjectItem, value: string) => {
         setProjectItems(prev =>
             prev.map(item => {
                 const currentId = item.project_id || item.temp_id
@@ -229,27 +236,29 @@ export default function ProjectManagePage() {
             })
         )
     }
-    // 수동 항목 추가 핸들러
+
+    // 6. 수동 항목 추가 핸들러
     const addNewItem = () => {
-        setProjectItems([
-            ...projectItems,
+        setProjectItems(prev => [
+            ...prev,
             {
-                // DB ID가 없으므로 임시 고유 ID 생성
-                temp_id: `new-${Date.now()}`,
-                project_name: '', // 초기값 빈 문자열 필수 (Controlled Input 에러 방지)
-                target_url: '', // 초기값 빈 문자열 필수
+                temp_id: `new-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                project_name: '',
+                target_url: '',
                 display_yn: 'Y',
                 delete_yn: 'N',
             },
         ])
     }
 
-    if (loading && isEditMode)
+    // 로딩 화면
+    if (loading && isEditMode) {
         return (
             <div className="flex h-screen items-center justify-center">
-                <Loader2 className="animate-spin" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
         )
+    }
 
     return (
         <div className="max-w-3xl mx-auto space-y-6 pb-20">
@@ -285,10 +294,7 @@ export default function ProjectManagePage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {organizations.map(org => (
-                                        <SelectItem
-                                            key={org.org_id}
-                                            value={org.org_id}
-                                        >
+                                        <SelectItem key={org.org_id} value={org.org_id}>
                                             {org.org_name}
                                         </SelectItem>
                                     ))}
@@ -300,12 +306,7 @@ export default function ProjectManagePage() {
                             <Label>프로젝트 대제목</Label>
                             <Input
                                 value={formData.project_title}
-                                onChange={e =>
-                                    setFormData({
-                                        ...formData,
-                                        project_title: e.target.value,
-                                    })
-                                }
+                                onChange={e => setFormData(prev => ({ ...prev, project_title: e.target.value }))}
                                 placeholder="예: 2026 웹 접근성 진단"
                                 required
                             />
@@ -316,12 +317,7 @@ export default function ProjectManagePage() {
                             <div className="flex gap-2">
                                 <Input
                                     value={formData.base_url}
-                                    onChange={e =>
-                                        setFormData({
-                                            ...formData,
-                                            base_url: e.target.value,
-                                        })
-                                    }
+                                    onChange={e => setFormData(prev => ({ ...prev, base_url: e.target.value }))}
                                     placeholder="https://"
                                     required
                                 />
@@ -341,17 +337,13 @@ export default function ProjectManagePage() {
                             </div>
                         </div>
 
-                        {/* 하단 목록 영역: DB 데이터 + 크롤링 데이터 하이브리드 */}
+                        {/* 하단 목록 영역 */}
                         <div className="pt-6 border-t space-y-4">
                             <div className="flex items-center justify-between">
                                 <Label className="text-base flex items-center gap-2">
                                     <ListChecks className="w-5 h-5 text-blue-600" />{' '}
                                     대상 페이지 목록 (
-                                    {
-                                        projectItems.filter(
-                                            i => i.delete_yn === 'N'
-                                        ).length
-                                    }
+                                    {projectItems.filter(i => i.delete_yn === 'N').length}
                                     )
                                 </Label>
                                 <Button
@@ -365,15 +357,13 @@ export default function ProjectManagePage() {
                                 </Button>
                             </div>
 
-                            <div className="grid gap-4 max-h-125 overflow-y-auto p-4 border rounded-lg bg-slate-50/50">
+                            <div className="grid gap-4 max-h-[500px] overflow-y-auto p-4 border rounded-lg bg-slate-50/50">
                                 {projectItems.map((item, idx) => {
-                                    if (item.delete_yn === 'Y') return null // 삭제(제외)된 항목은 숨김
-                                    // 고유 키 생성: DB ID가 있으면 ID 사용, 없으면 URL과 인덱스 조합
-                                    const itemKey =
-                                        item.project_id ||
-                                        item.temp_id ||
-                                        item.target_url ||
-                                        `idx-${idx}`
+                                    if (item.delete_yn === 'Y') return null
+
+                                    // 타입 안정성을 위해 보장된 ID를 키로 사용
+                                    const itemKey = item.project_id || item.temp_id || `fallback-${idx}`
+
                                     return (
                                         <div
                                             key={itemKey}
@@ -381,86 +371,39 @@ export default function ProjectManagePage() {
                                         >
                                             <div className="flex items-center justify-between gap-4">
                                                 <div className="flex-1 grid grid-cols-2 gap-3">
-                                                    {/* 항목 이름 수정 */}
                                                     <div className="space-y-1">
-                                                        <Label className="text-[10px] font-bold">
-                                                            페이지 명칭
-                                                        </Label>
+                                                        <Label className="text-[10px] font-bold">페이지 명칭</Label>
                                                         <Input
-                                                            value={
-                                                                item.project_name ||
-                                                                ''
-                                                            }
-                                                            onChange={e =>
-                                                                updateItemField(
-                                                                    itemKey,
-                                                                    'project_name',
-                                                                    e.target
-                                                                        .value
-                                                                )
-                                                            } // itemKey 전달
+                                                            value={item.project_name || ''}
+                                                            onChange={e => updateItemField(itemKey, 'project_name', e.target.value)}
                                                             className="h-8 text-sm font-bold"
                                                             placeholder="예: 메인 페이지"
                                                         />
                                                     </div>
-                                                    {/* URL 수정 */}
                                                     <div className="space-y-1">
-                                                        <Label className="text-[10px] font-bold">
-                                                            Target URL
-                                                        </Label>
+                                                        <Label className="text-[10px] font-bold">Target URL</Label>
                                                         <Input
-                                                            value={
-                                                                item.target_url ||
-                                                                ''
-                                                            }
-                                                            onChange={e =>
-                                                                updateItemField(
-                                                                    itemKey,
-                                                                    'target_url',
-                                                                    e.target
-                                                                        .value
-                                                                )
-                                                            } // itemKey 전달
+                                                            value={item.target_url || ''}
+                                                            onChange={e => updateItemField(itemKey, 'target_url', e.target.value)}
                                                             className="h-8 text-sm text-slate-500"
                                                             placeholder="https://..."
                                                         />
                                                     </div>
                                                 </div>
 
-                                                {/* 노출 여부 (display_yn) 및 삭제 버튼 */}
                                                 <div className="flex items-center gap-3 pl-4 border-l">
                                                     <div className="flex flex-col items-center gap-1">
-                                                        <Label className="text-[10px] text-slate-400 text-center">
-                                                            노출
-                                                        </Label>
+                                                        <Label className="text-[10px] text-slate-400 text-center">노출</Label>
                                                         <Checkbox
-                                                            checked={
-                                                                item.display_yn !==
-                                                                'N'
-                                                            }
-                                                            onCheckedChange={
-                                                                checked =>
-                                                                    updateItemField(
-                                                                        itemKey,
-                                                                        'display_yn',
-                                                                        checked
-                                                                            ? 'Y'
-                                                                            : 'N'
-                                                                    ) // itemKey 전달
-                                                            }
+                                                            checked={item.display_yn !== 'N'}
+                                                            onCheckedChange={checked => updateItemField(itemKey, 'display_yn', checked ? 'Y' : 'N')}
                                                         />
                                                     </div>
                                                     <Button
                                                         type="button"
                                                         variant="ghost"
                                                         size="icon"
-                                                        onClick={() =>
-                                                            updateItemField(
-                                                                itemKey,
-                                                                'delete_yn',
-                                                                'Y'
-                                                            )
-                                                        } // itemKey 전달
+                                                        onClick={() => updateItemField(itemKey, 'delete_yn', 'Y')}
                                                         className="text-slate-300 hover:text-red-500"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -468,7 +411,6 @@ export default function ProjectManagePage() {
                                                 </div>
                                             </div>
 
-                                            {/* 데이터 출처 표시 */}
                                             <div className="absolute -top-2 -right-2 flex gap-1">
                                                 {item.project_id ? (
                                                     <span className="text-[9px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full shadow-sm">
@@ -483,6 +425,11 @@ export default function ProjectManagePage() {
                                         </div>
                                     )
                                 })}
+                                {projectItems.filter(i => i.delete_yn === 'N').length === 0 && (
+                                    <div className="text-center py-8 text-slate-500 text-sm">
+                                        추가된 페이지가 없습니다. 크롤링을 실행하거나 수동으로 추가해주세요.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </CardContent>

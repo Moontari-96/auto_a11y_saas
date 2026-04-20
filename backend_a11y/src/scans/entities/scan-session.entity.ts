@@ -5,8 +5,12 @@ import {
   Column,
   CreateDateColumn,
   Check,
+  OneToMany,
 } from 'typeorm';
 import { ScanStatus } from './scan-status.enum';
+import { A11yIssue } from './a11y-issue.entity';
+import { Project } from '@/projects/entities/projects.entity';
+import { ManyToOne, JoinColumn } from 'typeorm';
 
 @Entity('scan_sessions', { schema: 'public' })
 @Check(`"overall_score" >= 0 AND "overall_score" <= 100`)
@@ -16,6 +20,9 @@ export class ScanSession {
 
   @Column('uuid')
   project_id: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  target_url?: string;
 
   @Column({
     type: 'enum',
@@ -39,10 +46,12 @@ export class ScanSession {
 
   // --- 관계 설정 (필요시 활성화) ---
 
-  // @ManyToOne(() => Project, (project) => project.scanSessions, { onDelete: 'CASCADE' })
-  // @JoinColumn({ name: 'project_id' })
-  // project: Project;
+  @ManyToOne(() => Project, (project) => project.scanSessions, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'project_id' })
+  project: Project;
 
-  // @OneToMany(() => A11yIssue, (issue) => issue.scanSession)
-  // issues: A11yIssue[];
+  @OneToMany(() => A11yIssue, (issue) => issue.scanSession)
+  issues: A11yIssue[];
 }
