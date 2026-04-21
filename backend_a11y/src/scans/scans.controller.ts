@@ -2,7 +2,6 @@ import { Controller, Get, Param, Post, Body } from '@nestjs/common';
 import { ScansService } from './scans.service';
 import { Public } from '@/auth/public.decorator';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-@Public()
 @ApiTags('Scans')
 @Controller('scans')
 export class ScansController {

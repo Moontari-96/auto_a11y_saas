@@ -4,7 +4,6 @@ import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public } from '@/auth/public.decorator';
 import { GetProjectsQueryDto } from './dto/get-projects-query.dto';
 import { SaveProjectDto } from './dto/save-projects-query.dto';
-@Public()
 @ApiTags('Project')
 @Controller('projects')
 export class ProjectsController {

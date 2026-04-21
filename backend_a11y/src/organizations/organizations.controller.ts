@@ -6,7 +6,6 @@ import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public } from '@/auth/public.decorator';
 import { GetOrganizationsQueryDto } from './dto/get-organizations-query.dto';
 
-@Public()
 @ApiTags('Organization')
 @Controller('organizations')
 export class OrganizationsController {

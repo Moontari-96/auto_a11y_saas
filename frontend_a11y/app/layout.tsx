@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 export const metadata: Metadata = {
     title: 'AbleFlow',
@@ -15,7 +16,9 @@ export default function RootLayout({
     return (
         <html lang="ko" suppressHydrationWarning>
             <body className="min-h-screen bg-background text-foreground">
-                {children}
+                <AuthProvider>
+                    {children}
+                </AuthProvider>
                 <Toaster position="top-center" richColors />
             </body>
         </html>

@@ -51,7 +51,7 @@ export default function OrganizationManagePage() {
                     }
                 } catch (e) {
                     console.error('데이터 로드 실패:', e)
-                    alert('정보를 불러오지 못했습니다.')
+                                        alert('정보를 불러오지 못했습니다.')
                 } finally {
                     setLoading(false)
                 }
@@ -78,13 +78,13 @@ export default function OrganizationManagePage() {
                 )
 
                 if (res.data.success) {
-                    alert(res.data.message || '수정되었습니다.')
+                    toast.success(res.data.message || '수정되었습니다.')
                     // 성공 후 목록 페이지로 이동
                     router.push('/dashboard/organizations')
                     // 목록 페이지 데이터 갱신을 위해 refresh 호출 (선택)
                     router.refresh()
                 } else {
-                    alert(res.data.message || '수정에 실패했습니다.')
+                    toast.error(res.data.message || '수정에 실패했습니다.')
                 }
             } else {
                 // 등록 모드: POST /organizations/createOrg (기존에 정한 경로)
@@ -93,13 +93,13 @@ export default function OrganizationManagePage() {
                 })
 
                 if (res.data.success) {
-                    alert(res.data.message || '등록되었습니다.')
+                    toast.success(res.data.message || '등록되었습니다.')
                     // 성공 후 목록 페이지로 이동
                     router.push('/dashboard/organizations')
                     // 목록 페이지 데이터 갱신을 위해 refresh 호출 (선택)
                     router.refresh()
                 } else {
-                    alert(res.data.message || '등록에 실패했습니다.')
+                    toast.error(res.data.message || '등록에 실패했습니다.')
                 }
             }
         } catch (e: any) {
