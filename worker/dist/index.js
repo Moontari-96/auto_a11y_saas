@@ -6,9 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.performCrawl = performCrawl;
 const express_1 = __importDefault(require("express"));
 const axe_runner_1 = require("./axe-runner");
-const lighthouse_runner_1 = require("./lighthouse-runner");
 const axe_nomarlizer_1 = require("./normalizers/axe-nomarlizer");
-const lighthouse_nomalizer_1 = require("./normalizers/lighthouse-nomalizer");
 const puppeteer_1 = __importDefault(require("puppeteer"));
 const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
@@ -128,10 +126,10 @@ async function performScan(url) {
     const axeResults = await (0, axe_runner_1.runAxeScan)(url);
     const axeRules = (0, axe_nomarlizer_1.normalizeAxeResults)(axeResults);
     // 2. lighthouse 검사
-    const lighthouseAudits = await (0, lighthouse_runner_1.runLighthouse)(url);
-    const lighthouseRules = (0, lighthouse_nomalizer_1.normalizeLighthouseAudits)(lighthouseAudits);
+    // const lighthouseAudits = await runLighthouse(url)
+    // const lighthouseRules = normalizeLighthouseAudits(lighthouseAudits)
     // 3. 결과 통합 및 반환
-    return [...axeRules, ...lighthouseRules];
+    return [...axeRules];
 }
 // API 엔드포인트 생성
 app.post('/run-scan', async (req, res) => {

@@ -1,6 +1,14 @@
 'use client'
 
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
+import {
+    useEffect,
+    useState,
+    useMemo,
+    useRef,
+    useCallback,
+    Suspense,
+} from 'react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,118 +29,113 @@ import {
     PaginationItem,
     PaginationLink,
 } from '@/components/ui/pagination'
+import type { Organization, Project, FetchedProjectRaw } from '@/types'
 
 // --- 타입 정의 ---
-interface Organization {
-    org_id: string;
-    org_name: string;
-}
 
-interface Project {
-    project_id: string;
-    project_name: string;
-    target_url: string;
-    status: ScanStatus;
-    last_scan_id?: string;
-    last_scan_date?: string;
-    last_score?: number;
-}
+function ScanContent() {
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
 
-// DB에서 넘어오는 Raw 데이터 타입 정의 (any 대체)
-interface FetchedProjectRaw {
-    project_id: string;
-    project_name: string;
-    target_url: string;
-    status?: ScanStatus;
-    last_scan_id?: string;
-    scan_id?: string;
-    last_scan_date?: string;
-    finished_at?: string;
-    last_score?: number;
-    overall_score?: number;
-}
+    const selectedOrgId = searchParams.get('orgId') || ''
+    const searchTerm = searchParams.get('q') || ''
+    const currentPage = Number(searchParams.get('page') || '1')
 
-export default function ScanPage() {
     const [organizations, setOrganizations] = useState<Organization[]>([])
-    const [selectedOrgId, setSelectedOrgId] = useState<string>('')
     const [projects, setProjects] = useState<Project[]>([])
     const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([])
-
-    const [searchTerm, setSearchTerm] = useState('')
-    const [currentPage, setCurrentPage] = useState(1)
+    const [searchInput, setSearchInput] = useState(searchTerm)
     const itemsPerPage = 8
 
     const pollingTimers = useRef<{ [key: string]: NodeJS.Timeout }>({})
 
-    // --- 비즈니스 로직 함수들 ---
-    const updateProjectData = useCallback((projectId: string, newData: Partial<Project>) => {
-        setProjects(prev =>
-            prev.map(p => (p.project_id === projectId ? { ...p, ...newData } : p))
-        )
-    }, [])
+    const updateProjectData = useCallback(
+        (projectId: string, newData: Partial<Project>) => {
+            setProjects(prev =>
+                prev.map(p =>
+                    p.project_id === projectId ? { ...p, ...newData } : p
+                )
+            )
+        },
+        []
+    )
 
-    const startPolling = useCallback((scanId: string, projectId: string) => {
-        if (pollingTimers.current[scanId]) return
+    const startPolling = useCallback(
+        (scanId: string, projectId: string) => {
+            if (pollingTimers.current[scanId]) return
 
-        const timer = setInterval(async () => {
-            try {
-                const res = await api.get(`/scans/${scanId}`)
-                const currentStatus = res.data.status as ScanStatus
-                const score = res.data.overall_score
+            const timer = setInterval(async () => {
+                try {
+                    const res = await api.get(`/scans/${scanId}`)
+                    const data = res.data // Get the full scan data
+                    const currentStatus = data.status as ScanStatus
 
-                updateProjectData(projectId, {
-                    status: currentStatus,
-                    last_score: score !== undefined ? score : undefined
-                })
+                    const newData: Partial<Project> = {
+                        status: currentStatus,
+                    }
 
-                if (currentStatus === 'COMPLETED' || currentStatus === 'FAILED') {
+                    // When scan is done, update score and date
+                    if (currentStatus === 'COMPLETED') {
+                        newData.last_score = data.overall_score
+                        newData.last_scan_date = data.finished_at
+                        newData.last_scan_id = scanId // Ensure scan ID is updated
+                    }
+                    
+                    updateProjectData(projectId, newData)
+
+                    if (
+                        currentStatus === 'COMPLETED' ||
+                        currentStatus === 'FAILED'
+                    ) {
+                        clearInterval(timer)
+                        delete pollingTimers.current[scanId]
+                    }
+                } catch (error) {
+                    console.error('[Polling Error]', error)
+                    updateProjectData(projectId, { status: 'FAILED' })
                     clearInterval(timer)
                     delete pollingTimers.current[scanId]
                 }
-            } catch (error) {
-                console.error('[Polling Error]', error) // error 사용
-                updateProjectData(projectId, { status: 'FAILED' })
-                clearInterval(timer)
-                delete pollingTimers.current[scanId]
-            }
-        }, 2000)
+            }, 2000)
 
-        pollingTimers.current[scanId] = timer
-    }, [updateProjectData])
+            pollingTimers.current[scanId] = timer
+        },
+        [updateProjectData]
+    )
 
-    // 1. 초기 데이터 로드
     useEffect(() => {
         api.post('/organizations/scanSelectAll').then(res => {
             setOrganizations(res.data.data || [])
         })
 
-        // 클린업 시점의 ref 값을 캡처해두어 안전하게 타이머 해제
         const currentTimers = pollingTimers.current
         return () => {
             Object.values(currentTimers).forEach(clearInterval)
         }
     }, [])
 
-    // 2. 고객사 선택 시 프로젝트 로드 및 상태 복원
     useEffect(() => {
-        if (!selectedOrgId) return
+        if (!selectedOrgId) {
+            setProjects([])
+            return
+        }
 
         api.post(`/projects/findScanAllByOrg/${selectedOrgId}`).then(res => {
             const fetchedProjects: FetchedProjectRaw[] = res.data.data || []
 
-            const mappedProjects: Project[] = fetchedProjects.map((p) => ({
+            const mappedProjects: Project[] = fetchedProjects.map(p => ({
                 project_id: p.project_id,
                 project_name: p.project_name,
                 target_url: p.target_url,
                 status: p.status || 'IDLE',
                 last_scan_id: p.last_scan_id || p.scan_id,
                 last_scan_date: p.last_scan_date || p.finished_at,
-                last_score: p.last_score || p.overall_score,
+                last_score: p.last_score ?? p.overall_score,
             }))
 
             setProjects(mappedProjects)
             setSelectedProjectIds([])
-            setCurrentPage(1)
 
             mappedProjects.forEach(p => {
                 if (p.status === 'PROGRESS' && p.last_scan_id) {
@@ -142,17 +145,35 @@ export default function ScanPage() {
         })
     }, [selectedOrgId, startPolling])
 
+    const handleFilterChange = (key: string, value: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set(key, value)
+        // 고객사 변경 시 페이지와 검색어 초기화
+        if (key === 'orgId') {
+            params.set('page', '1')
+            params.delete('q')
+            setSearchInput('')
+        }
+        router.push(`${pathname}?${params.toString()}`)
+    }
+    
+    const handleSearch = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('page', '1')
+        params.set('q', searchInput)
+        router.push(`${pathname}?${params.toString()}`)
+    }
 
-    // 검색 필터링
     const filteredProjects = useMemo(() => {
         return projects.filter(
             p =>
-                p.project_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                p.project_name
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase()) ||
                 p.target_url.toLowerCase().includes(searchTerm.toLowerCase())
         )
     }, [projects, searchTerm])
 
-    // 페이지네이션 계산
     const totalPages = Math.ceil(filteredProjects.length / itemsPerPage)
     const currentProjects = useMemo(() => {
         const start = (currentPage - 1) * itemsPerPage
@@ -161,39 +182,43 @@ export default function ScanPage() {
 
     const isAllSelected =
         currentProjects.length > 0 &&
-        currentProjects.every(p => selectedProjectIds.includes(p.project_id))
-
-    // UI 액션 함수들
-    const goToPage = (page: number) => {
-        setCurrentPage(page)
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
+        currentProjects.every(p =>
+            selectedProjectIds.includes(p.project_id)
+        )
 
     const handleSelectAll = (checked: boolean) => {
         const currentPageIds = currentProjects.map(p => p.project_id)
         if (checked) {
-            setSelectedProjectIds(prev => Array.from(new Set([...prev, ...currentPageIds])))
+            setSelectedProjectIds(prev =>
+                Array.from(new Set([...prev, ...currentPageIds]))
+            )
         } else {
-            setSelectedProjectIds(prev => prev.filter(id => !currentPageIds.includes(id)))
+            setSelectedProjectIds(prev =>
+                prev.filter(id => !currentPageIds.includes(id))
+            )
         }
     }
 
     const executeScan = async (targetProjects: Project[]) => {
         if (targetProjects.length === 0) return
 
-        const hasPreviousScans = targetProjects.some(p => p.last_scan_date || p.status === 'COMPLETED');
+        const hasPreviousScans = targetProjects.some(
+            p => p.last_scan_date || p.status === 'COMPLETED'
+        )
 
         if (hasPreviousScans) {
             const isConfirmed = window.confirm(
                 '선택한 항목 중 이미 검사한 이력이 있는 페이지가 포함되어 있습니다. 다시 검사하시겠습니까?\n(새로운 결과로 덮어씌워집니다.)'
-            );
-            if (!isConfirmed) return;
+            )
+            if (!isConfirmed) return
         }
 
         const targetIds = targetProjects.map(p => p.project_id)
         setProjects(prev =>
             prev.map(p =>
-                targetIds.includes(p.project_id) ? { ...p, status: 'PROGRESS' } : p
+                targetIds.includes(p.project_id)
+                    ? { ...p, status: 'PROGRESS', last_score: undefined } // Reset score
+                    : p
             )
         )
 
@@ -207,16 +232,21 @@ export default function ScanPage() {
             })
 
             if (res.data.success) {
-                // 타입 명시로 any 제거
-                res.data.scans.forEach((item: { scanId: string; projectId: string }) => {
-                    startPolling(item.scanId, item.projectId)
-                })
+                res.data.scans.forEach(
+                    (item: { scanId: string; projectId: string }) => {
+                        // Immediately update the project with the new scan ID
+                        updateProjectData(item.projectId, { last_scan_id: item.scanId });
+                        startPolling(item.scanId, item.projectId)
+                    }
+                )
             }
         } catch (error) {
-            console.error('[Scan Execution Error]', error) // error 사용
+            console.error('[Scan Execution Error]', error)
             setProjects(prev =>
                 prev.map(p =>
-                    targetIds.includes(p.project_id) ? { ...p, status: 'FAILED' } : p
+                    targetIds.includes(p.project_id)
+                        ? { ...p, status: 'FAILED' }
+                        : p
                 )
             )
         }
@@ -237,9 +267,8 @@ export default function ScanPage() {
                 <div className="flex items-center gap-3">
                     <Select
                         value={selectedOrgId}
-                        onValueChange={setSelectedOrgId}
+                        onValueChange={value => handleFilterChange('orgId', value)}
                     >
-                        {/* w-[180px] -> w-45 변경 */}
                         <SelectTrigger className="w-45 bg-white border-slate-200">
                             <SelectValue placeholder="고객사 선택" />
                         </SelectTrigger>
@@ -257,11 +286,10 @@ export default function ScanPage() {
                         <Input
                             placeholder="프로젝트 이름 또는 URL 검색..."
                             className="pl-9 w-[320px] bg-slate-50 border-none focus-visible:ring-1 focus-visible:ring-blue-500"
-                            value={searchTerm}
-                            onChange={e => {
-                                setSearchTerm(e.target.value)
-                                setCurrentPage(1)
-                            }}
+                            value={searchInput}
+                            onChange={e => setSearchInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                            disabled={!selectedOrgId}
                         />
                     </div>
                 </div>
@@ -272,6 +300,7 @@ export default function ScanPage() {
                             id="all-select"
                             checked={isAllSelected}
                             onCheckedChange={handleSelectAll}
+                            disabled={!selectedOrgId}
                         />
                         <label
                             htmlFor="all-select"
@@ -297,7 +326,6 @@ export default function ScanPage() {
                 </div>
             </div>
 
-            {/* min-h-[400px] -> min-h-100 변경 */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-100">
                 {currentProjects.map(project => (
                     <ProjectCard
@@ -311,8 +339,8 @@ export default function ScanPage() {
                                 checked
                                     ? [...prev, project.project_id]
                                     : prev.filter(
-                                        id => id !== project.project_id
-                                    )
+                                          id => id !== project.project_id
+                                      )
                             )
                         }}
                         onExecute={() => executeScan([project])}
@@ -320,7 +348,7 @@ export default function ScanPage() {
                 ))}
             </div>
 
-            {totalPages > 0 && (
+            {totalPages > 1 && (
                 <div className="flex flex-col items-center gap-4 py-10">
                     <Pagination>
                         <PaginationContent>
@@ -329,21 +357,21 @@ export default function ScanPage() {
                                     variant="ghost"
                                     className="gap-1 pl-2.5"
                                     disabled={currentPage <= 1}
-                                    onClick={() => goToPage(currentPage - 1)}
+                                    onClick={() => handleFilterChange('page', String(currentPage - 1))}
                                 >
                                     <ChevronLeft className="h-4 w-4" />
                                     <span>이전</span>
                                 </Button>
                             </PaginationItem>
 
-                            {[...Array(Math.max(1, totalPages))].map((_, i) => (
+                            {[...Array(totalPages)].map((_, i) => (
                                 <PaginationItem
                                     key={i}
                                     className="cursor-pointer"
                                 >
                                     <PaginationLink
                                         isActive={currentPage === i + 1}
-                                        onClick={() => goToPage(i + 1)}
+                                        onClick={() => handleFilterChange('page', String(i + 1))}
                                     >
                                         {i + 1}
                                     </PaginationLink>
@@ -355,7 +383,7 @@ export default function ScanPage() {
                                     variant="ghost"
                                     className="gap-1 pr-2.5"
                                     disabled={currentPage >= totalPages}
-                                    onClick={() => goToPage(currentPage + 1)}
+                                    onClick={() => handleFilterChange('page', String(currentPage + 1))}
                                 >
                                     <span>다음</span>
                                     <ChevronRight className="h-4 w-4" />
@@ -366,5 +394,13 @@ export default function ScanPage() {
                 </div>
             )}
         </div>
+    )
+}
+
+export default function ScanPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <ScanContent />
+        </Suspense>
     )
 }

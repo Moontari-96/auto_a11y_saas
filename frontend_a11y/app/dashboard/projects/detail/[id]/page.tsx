@@ -33,24 +33,9 @@ import {
 import Link from 'next/link'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
+import type { Organization, ProjectItem } from '@/types'
 
 // 1. 타입 정의 정립
-interface Organization {
-    org_id: string;
-    org_name: string;
-    base_url: string;
-}
-
-interface ProjectItem {
-    project_id?: string;
-    temp_id?: string;
-    org_id?: string;
-    project_name: string;
-    target_url: string;
-    display_yn: string;
-    delete_yn: string;
-    organization?: Organization;
-}
 
 export default function ProjectManagePage() {
     const params = useParams()

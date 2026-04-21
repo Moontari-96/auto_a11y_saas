@@ -57,7 +57,7 @@ export function ProjectCard({
                     />
                     <div className="flex items-center gap-2">
                         {/* 이전 검사 점수가 있을 경우 뱃지로 표시 */}
-                        {project.last_score !== undefined && !isRunning && (
+                        {project.last_score != null && !isRunning && (
                             <span
                                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                                     project.last_score >= 80

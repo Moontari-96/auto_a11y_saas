@@ -6,12 +6,57 @@ export function normalizeLighthouseAudits(audits?: Record<string, any>): RuleRes
     const results: RuleResult[] = [];
 
     const targetAudits = [
+        // 기존 항목 유지 및 유효하지 않은 항목 제거
         'color-contrast',
-        'keyboard',
-        'focus-visible',
-        'logical-tab-order',
         'link-name',
         'heading-order',
+        'logical-tab-order',
+        'document-title', // 문서 제목
+        'html-has-lang', // HTML lang 속성
+
+        // 이미지 및 미디어
+        'image-alt',
+        'input-image-alt',
+        'object-alt',
+        'video-caption',
+
+        // ARIA 속성 관련
+        'aria-allowed-attr',
+        'aria-command-name',
+        'aria-hidden-body',
+        'aria-hidden-focus',
+        'aria-input-field-name',
+        'aria-meter-name',
+        'aria-progressbar-name',
+        'aria-required-attr',
+        'aria-required-children',
+        'aria-required-parent',
+        'aria-roles',
+        'aria-toggle-field-name',
+        'aria-tooltip-name',
+        'aria-valid-attr-value',
+        'aria-valid-attr',
+
+        // 상호작용 및 네비게이션
+        'accesskeys',
+        'button-name',
+        'bypass',
+        'frame-title',
+        'label',
+        'form-field-multiple-labels',
+
+        // 테이블 및 목록
+        'td-headers-attr',
+        'th-has-data-cells',
+        'list',
+        'listitem',
+        'definition-list',
+        'dlitem',
+
+        // 기타 중요 항목
+        'meta-viewport',
+        'duplicate-id-active',
+        'duplicate-id-aria',
     ];
 
     for (const id of targetAudits) {

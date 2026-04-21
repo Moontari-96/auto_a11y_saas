@@ -145,11 +145,11 @@ async function performScan(url: string) {
     const axeRules = normalizeAxeResults(axeResults)
 
     // 2. lighthouse 검사
-    const lighthouseAudits = await runLighthouse(url)
-    const lighthouseRules = normalizeLighthouseAudits(lighthouseAudits)
+    // const lighthouseAudits = await runLighthouse(url)
+    // const lighthouseRules = normalizeLighthouseAudits(lighthouseAudits)
 
     // 3. 결과 통합 및 반환
-    return [...axeRules, ...lighthouseRules]
+    return [...axeRules]
 }
 
 // API 엔드포인트 생성
