@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+// @ts-ignore
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
